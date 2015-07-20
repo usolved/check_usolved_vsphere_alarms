@@ -1,0 +1,18 @@
+name: check_usolved_vsphere_alarms
+description: "file:///README.md"
+url: "https://github.com/usolved/check_usolved_vsphere_alarms"
+tags: vSphere,Alarms,Alerts
+vendor: VMware
+target: Appliance,ESX
+type: Plugin
+license: gplv3
+releases: 
+  - 
+    name: 1.0
+    description: "Initial release"
+    files: 
+      - 
+        name: check_usolved_vsphere_alarms.py
+        url: "file:///check_usolved_vsphere_alarms.py"
+        description: "Initial release"
+        checksum: 9018f0e8497022eb54eea75228d66e0a

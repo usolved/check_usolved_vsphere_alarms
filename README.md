@@ -9,7 +9,7 @@ If you're already using alarm rules in vSphere this plugin may help you to have 
 
 ## Authors
 
-Ricardo Klement (www.usolved.net)
+Ricardo Klement ([www.usolved.net](http://usolved.net))
 
 ## Installation
 
@@ -24,16 +24,16 @@ If you get errors while executing the plugin install the missing modules.
 ###Install default Perl modules
 
 With yum package manager (RedHat, CentOS, ...)
-<pre><code>
+```
 yum install perl-Getopt-Long-Descriptive
 yum install perl-File-Spec
-</code></pre>
+```
 
 Or with CPAN
-<pre><code>
+```
 cpan install Getopt::Long
 cpan install File::Spec
-</code></pre>
+```
 
 
 ###Install VMWare Perl SDK
@@ -44,11 +44,11 @@ This plugin needs the VMWare Perl SDK for connecting to the vSphere or ESX serve
 2. Download the proper Perl SDK for your vSphere release (you need to register at VMWare to download the SDK)
 3. Upload the tar.gz to your Nagios/Icinga server and install it
 
-<pre><code>
+```
 tar -xzf VMware-vSphere-Perl-SDK-5.5.0-1384587.x86_64.tar.gz
 cd vmware-vsphere-cli-distrib
 ./vmware-install.pl
-</code></pre>
+```
 
 
 ## Usage
@@ -56,13 +56,13 @@ cd vmware-vsphere-cli-distrib
 ### Test on command line
 If you are in the Nagios plugin directory execute this command:
 
-<pre><code>
+```
 ./check_usolved_vsphere_alarms.pl -H 172.0.1.1 -U username -P password
-</code></pre>
+```
 
 The output could look like this:
 
-<pre><code>
+```
 Critical - 10 alarms found. View extended output for more information.
 Critical - Network-Uplink-Redundancy lost on ESX1 (DATACENTER1: HostSystem)
 Warning - CPU-Usage of Virtual Machine on SERVER3 (DATACENTER2: VirtualMachine)
@@ -74,25 +74,25 @@ Warning - Data storage disk on DATASTORE4 (DATACENTER1: Datastore)
 Warning - Data storage disk on DATASTORE5 (DATACENTER1: Datastore)
 Critical - SimpliVity OmniCube Available Physical Capacity 10 Percent or Less on ESX3 (DATACENTER1: HostSystem)
 Critical - SimpliVity Datacenter Available Physical Capacity 10 Percent or Less on SERVER2 (DATACENTER1: Datacenter)
-</code></pre>
+```
 
 Here's an example with some filters:
 
-<pre><code>
+```
 ./check_usolved_vsphere_alarms.pl -H 172.0.1.1 -U username -P password -C i:type=ds,i:status=critical
-</code></pre>
+```
 
 The output could look like this:
 
-<pre><code>
+```
 Critical - 2 alarms found. View extended output for more information.
 Critical - Data storage disk on DATASTORE1 (DATACENTER1: Datastore)
 Critical - Data storage disk on DATASTORE2 (DATACENTER1: Datastore)
-</code></pre>
+```
 
 Here are all arguments that can be used with this plugin:
 
-<pre><code>
+```
 -H, --hostname=HOST
     Name or IP address of host to check
 -U, --username=USERNAME
@@ -147,7 +147,7 @@ Here are all arguments that can be used with this plugin:
     ./check_usolved_vsphere_alarms.pl -H 172.0.1.1 -U username -P password -C i:type=ds,i:status=critical,e:object=dsname03
 
     Remember that the include has a higher priority than the exclude.
-</code></pre>
+```
 
 ### Install in Nagios/Icinga
 
@@ -155,47 +155,48 @@ Edit your **commands.cfg** and add the following.
 
 Example for basic check (with host macro for username and password):
 
-<pre><code>
+```
 define command {
     command_name    check_usolved_vsphere_alarms
     command_line    $USER1$/check_usolved_vsphere_alarms.pl -H $HOSTADDRESS$ -U $_HOSTUSER$ -P $_HOSTPASSWORD$
 }
-</code></pre>
+```
 
 Example for using a filter:
 
-<pre><code>
+```
 define command {
     command_name    check_usolved_vsphere_alarms
     command_line    $USER1$/check_usolved_vsphere_alarms.pl -H $HOSTADDRESS$ -U $_HOSTUSER$ -P $_HOSTPASSWORD$ -C $ARG1$
 }
-</code></pre>
+```
 
 Edit your **services.cfg** and add the following.
 
 Example for basic check with all alarms:
 
-<pre><code>
+```
 define service{
 	host_name				Test-Server
 	service_description		vSphere-Alarms
 	use						generic-service
 	check_command			check_usolved_vsphere_alarms
 }
-</code></pre>
+```
 
 Example for excluding warnings:
 
-<pre><code>
+```
 define service{
 	host_name				Test-Server
 	service_description		vSphere-Alarms
 	use						generic-service
 	check_command			check_usolved_vsphere_alarms!i:status=warning
 }
-</code></pre>
+```
 
 ## Whats new
 
-1.0 Initial release
+v1.0 2015-07-02
+Initial release
 
