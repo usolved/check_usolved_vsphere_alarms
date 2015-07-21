@@ -12,7 +12,7 @@ releases:
     description: "Initial release"
     files: 
       - 
-        name: check_usolved_vsphere_alarms.py
-        url: "file:///check_usolved_vsphere_alarms.py"
+        name: check_usolved_vsphere_alarms.pl
+        url: "file:///check_usolved_vsphere_alarms.pl"
         description: "Initial release"
         checksum: 9018f0e8497022eb54eea75228d66e0a
