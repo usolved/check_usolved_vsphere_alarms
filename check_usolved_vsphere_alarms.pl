@@ -9,7 +9,7 @@
 #This plugin has been tested with the SDK v5.0 and v5.5.
 #
 #
-#Copyright (c) 2015 www.usolved.net 
+#Copyright (c) 2016 www.usolved.net 
 #Published under https://github.com/usolved/check_usolved_vsphere_alarms
 #
 #
@@ -28,8 +28,12 @@
 #
 #---------------------------------------------------------------------------------------
 #
-#v1.0 2015-07-02
-#Initial release
+#   v1.1 2016-09-12
+# - Acknowledged alarms won't count as warning or critical anymore
+# - Number of acknowledged alarms in the status info output
+#
+#   v1.0 2015-07-02
+# - Initial release
 #
 
 
@@ -54,6 +58,7 @@ my $output_return_code 		= 0;
 
 my $count_warning 			= 0;
 my $count_critical 			= 0;
+my $count_acknowledged		= 0;
 
 my ($option_host, $option_username, $option_password, $option_check);
 my %checks;
@@ -321,56 +326,69 @@ sub get_alarms
 		{
 			foreach my $alarms (@{$datacenter_view->triggeredAlarmState})
 			{
+				#API documentation
+				#https://www.vmware.com/support/developer/converter-sdk/conv60_apireference/vim.alarm.AlarmState.html
 				my $entity 					= Vim::get_view(mo_ref => $alarms->entity);
 				my $alarm 					= Vim::get_view(mo_ref => $alarms->alarm);
+				my $acknowledged 			= $alarms->acknowledged;
+				my $time					= $alarms->time;
 				my $check_rule_status_i 	= 0;
 				my $check_rule_status_e 	= 1;
 				my %alarm_item;
 
-				$alarm_item{"NAME"} 		= $alarm->info->name;
-				$alarm_item{"STATUS"} 		= $alarms->overallStatus->val;
-				$alarm_item{"OBJECT"} 		= $entity->name;
-				$alarm_item{"DATACENTER"} 	= $datacenter_view->name;
-				$alarm_item{"TYPE"} 		= $alarms->entity->type;
-
-
-				#only if parameter -C is given
-				if(defined($option_check))
+				#check only not acknowledged alarms
+				if($acknowledged == 0)
 				{
-					$check_rule_status_i = check_rules("i", %alarm_item);
-				}
+					$alarm_item{"NAME"} 		= $alarm->info->name;
+					$alarm_item{"STATUS"} 		= $alarms->overallStatus->val;
+					$alarm_item{"OBJECT"} 		= $entity->name;
+					$alarm_item{"DATACENTER"} 	= $datacenter_view->name;
+					$alarm_item{"TYPE"} 		= $alarms->entity->type;
 
 
-				#by default just ignore the statement if no included found or -C is not given
-				if($check_rule_status_i == 0)
-				{
 					#only if parameter -C is given
 					if(defined($option_check))
 					{
-						$check_rule_status_e = check_rules("e", %alarm_item);
+						$check_rule_status_i = check_rules("i", %alarm_item);
 					}
 
-					#if no check rules are defined, this will always be true
-					if($check_rule_status_e == 1)
+
+					#by default just ignore the statement if no included found or -C is not given
+					if($check_rule_status_i == 0)
 					{
-
-						if($alarms->overallStatus->val eq "yellow")
+						#only if parameter -C is given
+						if(defined($option_check))
 						{
-							$output_nagios_extended .= "Warning - ";
-							$count_warning++;
-						}
-						elsif($alarms->overallStatus->val eq "red")
-						{
-							$output_nagios_extended .= "Critical - ";
-							$count_critical++;
-						}
-						else
-						{
-							$output_nagios_extended .= "Unknown - ";
+							$check_rule_status_e = check_rules("e", %alarm_item);
 						}
 
-						$output_nagios_extended .= $alarm_item{"NAME"}." on ".$alarm_item{"OBJECT"} ." (".$alarm_item{"DATACENTER"}.": ".$alarm_item{"TYPE"}.")\n";
+						#if no check rules are defined, this will always be true
+						if($check_rule_status_e == 1)
+						{
+
+							if($alarms->overallStatus->val eq "yellow")
+							{
+								$output_nagios_extended .= "Warning - ";
+								$count_warning++;
+							}
+							elsif($alarms->overallStatus->val eq "red")
+							{
+								$output_nagios_extended .= "Critical - ";
+								$count_critical++;
+							}
+							else
+							{
+								$output_nagios_extended .= "Unknown - ";
+							}
+
+							$output_nagios_extended .= $alarm_item{"NAME"}." on ".$alarm_item{"OBJECT"} ." (".$alarm_item{"DATACENTER"}.": ".$alarm_item{"TYPE"}.")\n";
+						}
 					}
+				}
+				else
+				{
+					#count each acknowledged alarm for later output
+					$count_acknowledged++
 				}
 			}
 		}
@@ -398,19 +416,27 @@ sub get_alarms
 #summarize alarms and build output string for nagios/icinga return
 sub output_nagios
 {
-	my $count_alarms_all = $count_warning + $count_critical;
+	my $count_alarms_all 	= $count_warning + $count_critical;
+	my $output_acknowledged = "";
+
+
+	if($count_acknowledged > 0)
+	{
+		$output_acknowledged = " (".$count_acknowledged." acknowledged)";
+	}
+
 
 	if($output_return_code == 0)
 	{
-		$output_nagios .= "OK - No alarms found";
+		$output_nagios .= "OK - No alarms found".$output_acknowledged;	
 	}
 	elsif($output_return_code == 1)
 	{
-		$output_nagios .= "Warning - ".$count_alarms_all." alarms found. View extended output for more information.";
+		$output_nagios .= "Warning - ".$count_alarms_all." alarms found".$output_acknowledged.". View extended output for more information.";
 	}
 	elsif($output_return_code == 2)
 	{
-		$output_nagios .= "Critical - ".$count_alarms_all." alarms found. View extended output for more information.";
+		$output_nagios .= "Critical - ".$count_alarms_all." alarms found".$output_acknowledged.". View extended output for more information.";
 	}
 	else
 	{

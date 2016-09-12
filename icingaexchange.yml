@@ -8,11 +8,11 @@ type: Plugin
 license: gplv3
 releases: 
   - 
-    name: 1.0
-    description: "Initial release"
+    name: 1.1
+    description: "Acknowledged alarms won't count as warning or critical anymore and number of acknowledged alarms in the status info output"
     files: 
       - 
         name: check_usolved_vsphere_alarms.pl
         url: "file:///check_usolved_vsphere_alarms.pl"
-        description: "Initial release"
-        checksum: 9018f0e8497022eb54eea75228d66e0a
+        description: "1.1 release"
+        checksum: 9be7b43895521ae2bcf3423cb0387525

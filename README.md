@@ -197,6 +197,10 @@ define service{
 
 ## Whats new
 
+v1.1 2016-09-12
+- Acknowledged alarms won't count as warning or critical anymore
+- Number of acknowledged alarms in the status info output
+
 v1.0 2015-07-02
-Initial release
+- Initial release
 
