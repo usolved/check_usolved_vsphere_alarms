@@ -196,6 +196,8 @@ define service{
 ```
 
 ## Whats new
+v1.2 2016-12-06
+- Removed unnecessary function for accessing the "alarmManager"
 
 v1.1 2016-09-12
 - Acknowledged alarms won't count as warning or critical anymore
@@ -203,4 +205,3 @@ v1.1 2016-09-12
 
 v1.0 2015-07-02
 - Initial release
-

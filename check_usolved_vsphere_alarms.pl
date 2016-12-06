@@ -6,7 +6,7 @@
 #your monitoring in one place instead of two.
 #
 #The pluging needs the VMWare Perl SDK to be installed on your monitoring server.
-#This plugin has been tested with the SDK v5.0 and v5.5.
+#This plugin has been tested with the SDK v5.0, v5.5 and 6.0.
 #
 #
 #Copyright (c) 2016 www.usolved.net 
@@ -27,6 +27,9 @@
 #along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 #---------------------------------------------------------------------------------------
+#
+#   v1.2 2016-12-06
+# - Removed unnecessary function for accessing the "alarmManager"
 #
 #   v1.1 2016-09-12
 # - Acknowledged alarms won't count as warning or critical anymore
@@ -270,7 +273,6 @@ sub check_rules
 #get all alarms from the vpshere
 sub get_alarms
 {
-	my $alarmMgr         = Vim::get_view(mo_ref => Vim::get_service_content()->alarmManager);
 	my $datacenter_views = Vim::find_entity_views(view_type => "Datacenter");
 
 
