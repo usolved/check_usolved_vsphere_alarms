@@ -66,7 +66,7 @@ my $count_warning 			= 0;
 my $count_critical 			= 0;
 my $count_acknowledged		= 0;
 
-my ($option_host, $option_username, $option_password, $option_check);
+my ($option_host, $option_username, $option_password, $option_check, $option_filter);
 my %checks;
 
 
@@ -143,6 +143,9 @@ sub output_usage
 
     Remember that the include has a higher priority than the exclude.
 
+-F, --filter=PATTERN
+    Exclude objects which have a name matching this pattern
+
 EOT
 	exit 3;
 }
@@ -161,7 +164,8 @@ sub get_options
         "H|hostname=s"     => \$option_host,
         "U|username=s"     => \$option_username,
         "P|password=s"     => \$option_password,
-        "C|check=s"        => \$option_check
+        "C|check=s"        => \$option_check,
+        "F|filter=s"       => \$option_filter
 	);
 
     if(!defined($option_host) || !defined($option_username) || !defined($option_password))
@@ -385,6 +389,13 @@ sub get_alarms
 					$alarm_item{"OBJECT"} 		= $entity->name;
 					$alarm_item{"DATACENTER"} 	= $datacenter_view->name;
 					$alarm_item{"TYPE"} 		= $alarms->entity->type;
+
+
+					#exclude object if the name doe not match the filter
+					if(defined($option_filter))
+					{
+						next unless $alarm_item{"NAME"} =~ /$option_filter/;
+					}
 
 
 					#only if parameter -C is given
