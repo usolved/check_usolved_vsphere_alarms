@@ -28,6 +28,9 @@
 #
 #---------------------------------------------------------------------------------------
 #
+#   v1.3 2017-01-12
+# - Added possibility to filter for the name of the alarm message
+#
 #   v1.2 2016-12-06
 # - Removed unnecessary function for accessing the "alarmManager"
 #
@@ -108,6 +111,11 @@ sub output_usage
     		SUBSELECT:
     		name of the vm, ds or esx host. wildcard is allowed like *vmname*
 
+    	name = to filter for a specific alarm message
+
+    		SUBSELECT:
+    		name of the alarm message. wildcard is allowed like *Virtual SAN*
+
     	status = just show either warnings or criticals
 
     		SUBSELECT:
@@ -122,6 +130,7 @@ sub output_usage
 
     <i|e>:type:<vm|ds|esx>
     <i|e>:object:<name of your vm, ds or esx>
+    <i|e>:name:<alarm message>
     <i|e>:status:<warning|critical>
     <i|e>:datacenter:<name of your datacenter>
 
@@ -221,6 +230,36 @@ sub check_rules
 			{
 				#else check for and exact match
 				if($checks{$item}{'SUBSELECT'} eq $alarm_item{'OBJECT'})
+				{
+					return $return_value_onresult;
+				}
+			}
+
+			
+		}
+		#Check if name is excluded
+		elsif($checks{$item}{'MODE'} eq $e_or_i && $checks{$item}{'SELECT'} eq "name")
+		{
+			my $first_char = substr($checks{$item}{'SUBSELECT'}, 0, 1);
+			my $last_char 	= substr($checks{$item}{'SUBSELECT'}, -1);
+
+			#if wildcard syntax is used
+			if($first_char eq "*" && $last_char eq "*")
+			{
+
+				my $tmp1 = substr($checks{$item}{'SUBSELECT'}, 1);
+				my $tmp2 = substr($tmp1, 0,-1);
+
+				#check if the alarm contains the check option 
+				if(index($alarm_item{'NAME'}, $tmp2) != -1)
+				{
+					return $return_value_onresult;
+				}
+			}
+			else
+			{
+				#else check for and exact match
+				if($checks{$item}{'SUBSELECT'} eq $alarm_item{'NAME'})
 				{
 					return $return_value_onresult;
 				}
@@ -457,5 +496,5 @@ connect_vsphere();
 get_alarms();
 output_nagios();
 
-#exit with the appropriate code for nagios
+#exit with the appropriate code for nagios or icinga
 exit $output_return_code;

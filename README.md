@@ -103,7 +103,7 @@ Here are all arguments that can be used with this plugin:
     Specify what you want to check. By default the plugin checks all alarms.
 
     Syntax:
-    &lt;MODE&gt;:&lt;SELECT&gt;=&lt;SUBSELECT&gt;
+    <MODE>:<SELECT>=<SUBSELECT>
 
     MODE:
     	i = include check
@@ -120,7 +120,12 @@ Here are all arguments that can be used with this plugin:
     	object = to check a specific object name like a vm name
 
     		SUBSELECT:
-    		name of the vm, ds or esx host. wildcard is allowed like *vmname*
+    		name of the vm, ds or esx host. Wildcard is allowed like *vmname*
+
+        name = to filter for a specific alarm message
+
+            SUBSELECT:
+            name of the alarm message. Wildcard is allowed like *Virtual SAN*
 
     	status = just show either warnings or criticals
 
@@ -134,10 +139,11 @@ Here are all arguments that can be used with this plugin:
     		name of your datacenter
 
 
-    &lt;i|e&gt;:type:&lt;vm|ds|esx&gt;
-    &lt;i|e&gt;:object:&lt;name of your vm, ds or esx&gt;
-    &lt;i|e&gt;:status:&lt;warning|critical&gt;
-    &lt;i|e&gt;:datacenter:&lt;name of your datacenter&gt;
+    <i|e>:type:<vm|ds|esx>
+    <i|e>:object:<name of your vm, ds or esx>
+    <i|e>:name:<alarm message>
+    <i|e>:status:<warning|critical>
+    <i|e>:datacenter:<name of your datacenter>
 
     Examples:
     1. just show alarms from esx hosts
@@ -196,6 +202,9 @@ define service{
 ```
 
 ## Whats new
+v1.3 2017-01-12
+- Added possibility to filter for the name of the alarm message
+
 v1.2 2016-12-06
 - Removed unnecessary function for accessing the "alarmManager"
 
