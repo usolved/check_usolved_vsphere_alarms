@@ -66,7 +66,7 @@ my $count_warning 			= 0;
 my $count_critical 			= 0;
 my $count_acknowledged		= 0;
 
-my ($option_host, $option_username, $option_password, $option_check);
+my ($option_host, $option_username, $option_password, $option_authfile, $option_check);
 my %checks;
 
 
@@ -88,6 +88,11 @@ sub output_usage
     Local or domain user for vSphere. If you use windows login make sure to escape the backslash like domainname\\\\username
 -P, --password=PASSWORD
     Password for the given username
+-F, --authfile=PATH
+    Authentication file with login and password.
+    File syntax :
+       username=<login>
+       password=<password>
 -C, --check=CHECK
     Specify what you want to check. By default the plugin checks all alarms.
 
@@ -138,7 +143,10 @@ sub output_usage
     1. just show alarms from esx hosts
     ./$scriptname -H 172.0.1.1 -U username -P password -C i:type=esx
 
-    2. check all datastores with critical alarms but don't show datastores with name dsname03
+    2. just show alarms from esx hosts using credentials from authfile
+    ./$scriptname -H 172.0.1.1 -F /path/to/authfile -C i:type=esx
+
+    3. check all datastores with critical alarms but don't show datastores with name dsname03
     ./$scriptname -H 172.0.1.1 -U username -P password -C i:type=ds,i:status=critical,e:object=dsname03
 
     Remember that the include has a higher priority than the exclude.
@@ -156,20 +164,44 @@ sub get_options
 		output_usage();
 	}
 
-    Getopt::Long::Configure ("bundling");
-    GetOptions(
-        "H|hostname=s"     => \$option_host,
-        "U|username=s"     => \$option_username,
-        "P|password=s"     => \$option_password,
-        "C|check=s"        => \$option_check
+	Getopt::Long::Configure ("bundling");
+	GetOptions(
+		"H|hostname=s"     => \$option_host,
+		"U|username=s"     => \$option_username,
+		"P|password=s"     => \$option_password,
+		"F|authfile=s"     => \$option_authfile,
+		"C|check=s"        => \$option_check
 	);
 
-    if(!defined($option_host) || !defined($option_username) || !defined($option_password))
- 	{ 
- 		print "Error - hostname, username and password are required.\n";
- 		output_usage();
- 	}
+	if(!defined($option_host))
+	{
+		print "Error - hostname is required.\n";
+		output_usage();
+	}
 
+	if (!defined($option_username) || !defined($option_password))
+	{
+		if (!defined($option_authfile))
+		{
+			print "Error - username and password or authfile are required.\n";
+			output_usage();
+		}
+	}
+
+	if (defined($option_authfile))
+	{
+		open (AUTH_FILE, $option_authfile) || die "Unable to open auth file \"$option_authfile\"\n";
+		while( <AUTH_FILE> ) {
+			if(s/^[ \t]*username[ \t]*=//){
+				s/^\s+//;s/\s+$//;
+				$option_username = $_;
+			}
+			if(s/^[ \t]*password[ \t]*=//){
+				s/^\s+//;s/\s+$//;
+				$option_password = $_;
+			}
+		}
+	}
 }
 
 #connect to the vsphere server with user and password
