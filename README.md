@@ -202,6 +202,9 @@ define service{
 ```
 
 ## Whats new
+v1.4 2019-03-04
+- Added the option of setting credentials directly from authfile (thanks to [@mjtrangoni](https://github.com/mjtrangoni))
+
 v1.3 2017-01-12
 - Added possibility to filter for the name of the alarm message
 
