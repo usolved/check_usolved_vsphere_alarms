@@ -53,6 +53,7 @@ use warnings;
 #---------------------------------------------------------------------------------------
 # Load modules
 
+use Net::SSL;
 use VMware::VIRuntime;	#To access the VMWare SDK
 use Getopt::Long;		#Parse the parameters
 use File::Spec;			#For splitting the path to get the filename
@@ -214,27 +215,15 @@ sub connect_vsphere
 }
 
 #when parameter -C is given check for all the include/exclude rules
+# returns: -1 -> no check of type (i,e) found
+#           0 -> filter matched (will include if i, exclude if e)
+#           1 -> filter did not match (will exclude if i, include if e)
 sub check_rules
 {
 	my($e_or_i, %alarm_item) 	= @_;
 
-	my $return_value_default 	= 1;
+	my $return_value_default 	= -1;
 	my $return_value_onresult 	= 0;
-
-
-	if($e_or_i eq "i")
-	{
-		#if nothing is found, then continue to the excluded checks
-		$return_value_default 	= 1;
-		$return_value_onresult 	= 0;
-	}
-	elsif($e_or_i eq "e")
-	{
-		#if nothing is found, then continue to the output of the alarm
-		$return_value_default 	= 1;
-	}
-
-
 
 
 	#reset hash by reading elements from hash, else the while would be skipped
@@ -242,102 +231,103 @@ sub check_rules
 
 	while((my $item) = each %checks)
 	{
-		#Check if object is excluded
-		if($checks{$item}{'MODE'} eq $e_or_i && $checks{$item}{'SELECT'} eq "object")
+		if($checks{$item}{'MODE'} eq $e_or_i)
 		{
-			my $first_char = substr($checks{$item}{'SUBSELECT'}, 0, 1);
-			my $last_char 	= substr($checks{$item}{'SUBSELECT'}, -1);
-
-			#if wildcard syntax is used
-			if($first_char eq "*" && $last_char eq "*")
+			$return_value_default = 1;
+			if ($checks{$item}{'SELECT'} eq "object")
 			{
-
-				my $tmp1 = substr($checks{$item}{'SUBSELECT'}, 1);
-				my $tmp2 = substr($tmp1, 0,-1);
-
-				#check if the alarm contains the check option 
-				if(index($alarm_item{'OBJECT'}, $tmp2) != -1)
+				my $first_char = substr($checks{$item}{'SUBSELECT'}, 0, 1);
+				my $last_char 	= substr($checks{$item}{'SUBSELECT'}, -1);
+	
+				#if wildcard syntax is used
+				if($first_char eq "*" && $last_char eq "*")
+				{
+	
+					my $tmp1 = substr($checks{$item}{'SUBSELECT'}, 1);
+					my $tmp2 = substr($tmp1, 0,-1);
+	
+					#check if the alarm contains the check option 
+					if(index($alarm_item{'OBJECT'}, $tmp2) != -1)
+					{
+						return $return_value_onresult;
+					}
+				}
+				else
+				{
+					#else check for and exact match
+					if($checks{$item}{'SUBSELECT'} eq $alarm_item{'OBJECT'})
+					{
+						return $return_value_onresult;
+					}
+				}
+	
+				
+			}
+			#Check if name is excluded
+			elsif($checks{$item}{'SELECT'} eq "name")
+			{
+				my $first_char = substr($checks{$item}{'SUBSELECT'}, 0, 1);
+				my $last_char 	= substr($checks{$item}{'SUBSELECT'}, -1);
+	
+				#if wildcard syntax is used
+				if($first_char eq "*" && $last_char eq "*")
+				{
+	
+					my $tmp1 = substr($checks{$item}{'SUBSELECT'}, 1);
+					my $tmp2 = substr($tmp1, 0,-1);
+	
+					#check if the alarm contains the check option 
+					if(index($alarm_item{'NAME'}, $tmp2) != -1)
+					{
+						return $return_value_onresult;
+					}
+				}
+				else
+				{
+					#else check for and exact match
+					if($checks{$item}{'SUBSELECT'} eq $alarm_item{'NAME'})
+					{
+						return $return_value_onresult;
+					}
+				}
+	
+				
+			}
+			#Check if status warning or critical is excluded
+			elsif($checks{$item}{'SELECT'} eq "status")
+			{
+	
+				if($checks{$item}{'SUBSELECT'} eq "warning" && $alarm_item{'STATUS'} eq "yellow")
+				{
+					return $return_value_onresult;
+				}
+				elsif($checks{$item}{'SUBSELECT'} eq "critical" && $alarm_item{'STATUS'} eq "red")
 				{
 					return $return_value_onresult;
 				}
 			}
-			else
+			#Check if type like vm, ds or esx is excluded
+			elsif($checks{$item}{'SELECT'} eq "type")
 			{
-				#else check for and exact match
-				if($checks{$item}{'SUBSELECT'} eq $alarm_item{'OBJECT'})
+				if($checks{$item}{'SUBSELECT'} eq "vm" && $alarm_item{'TYPE'} eq "VirtualMachine")
+				{
+					return $return_value_onresult;
+				}
+				elsif($checks{$item}{'SUBSELECT'} eq "ds" && $alarm_item{'TYPE'} eq "Datastore")
+				{
+					return $return_value_onresult;
+				}
+				elsif($checks{$item}{'SUBSELECT'} eq "esx" && $alarm_item{'TYPE'} eq "HostSystem")
 				{
 					return $return_value_onresult;
 				}
 			}
-
-			
-		}
-		#Check if name is excluded
-		elsif($checks{$item}{'MODE'} eq $e_or_i && $checks{$item}{'SELECT'} eq "name")
-		{
-			my $first_char = substr($checks{$item}{'SUBSELECT'}, 0, 1);
-			my $last_char 	= substr($checks{$item}{'SUBSELECT'}, -1);
-
-			#if wildcard syntax is used
-			if($first_char eq "*" && $last_char eq "*")
-			{
-
-				my $tmp1 = substr($checks{$item}{'SUBSELECT'}, 1);
-				my $tmp2 = substr($tmp1, 0,-1);
-
-				#check if the alarm contains the check option 
-				if(index($alarm_item{'NAME'}, $tmp2) != -1)
-				{
-					return $return_value_onresult;
-				}
-			}
-			else
-			{
-				#else check for and exact match
-				if($checks{$item}{'SUBSELECT'} eq $alarm_item{'NAME'})
-				{
-					return $return_value_onresult;
-				}
-			}
-
-			
-		}
-		#Check if status warning or critical is excluded
-		elsif($checks{$item}{'MODE'} eq $e_or_i && $checks{$item}{'SELECT'} eq "status")
-		{
-
-			if($checks{$item}{'SUBSELECT'} eq "warning" && $alarm_item{'STATUS'} eq "yellow")
-			{
-				return $return_value_onresult;
-			}
-			elsif($checks{$item}{'SUBSELECT'} eq "critical" && $alarm_item{'STATUS'} eq "red")
+			#Check if type like vm, ds or esx is excluded
+			elsif($checks{$item}{'SELECT'} eq "datacenter" && $checks{$item}{'SUBSELECT'} eq $alarm_item{'DATACENTER'})
 			{
 				return $return_value_onresult;
 			}
 		}
-		#Check if type like vm, ds or esx is excluded
-		elsif($checks{$item}{'MODE'} eq $e_or_i && $checks{$item}{'SELECT'} eq "type")
-		{
-			if($checks{$item}{'SUBSELECT'} eq "vm" && $alarm_item{'TYPE'} eq "VirtualMachine")
-			{
-				return $return_value_onresult;
-			}
-			elsif($checks{$item}{'SUBSELECT'} eq "ds" && $alarm_item{'TYPE'} eq "Datastore")
-			{
-				return $return_value_onresult;
-			}
-			elsif($checks{$item}{'SUBSELECT'} eq "esx" && $alarm_item{'TYPE'} eq "HostSystem")
-			{
-				return $return_value_onresult;
-			}
-		}
-		#Check if type like vm, ds or esx is excluded
-		elsif($checks{$item}{'MODE'} eq $e_or_i && $checks{$item}{'SELECT'} eq "datacenter" && $checks{$item}{'SUBSELECT'} eq $alarm_item{'DATACENTER'})
-		{
-			return $return_value_onresult;
-		}
-
-
 	}
 
 	#return true or false depending on the rule match
@@ -429,8 +419,7 @@ sub get_alarms
 					}
 
 
-					#by default just ignore the statement if no included found or -C is not given
-					if($check_rule_status_i == 0)
+					if($check_rule_status_i != 1)
 					{
 						#only if parameter -C is given
 						if(defined($option_check))
@@ -439,7 +428,7 @@ sub get_alarms
 						}
 
 						#if no check rules are defined, this will always be true
-						if($check_rule_status_e == 1)
+						if($check_rule_status_e != 0)
 						{
 
 							if($alarms->overallStatus->val eq "yellow")
