@@ -202,6 +202,9 @@ define service{
 ```
 
 ## Whats new
+v1.5 2020-11-10
+- Fixed exclude filters not working without include filters (thanks to [@araujorm](https://github.com/araujorm))
+
 v1.4 2019-03-04
 - Added the option of setting credentials directly from authfile (thanks to [@mjtrangoni](https://github.com/mjtrangoni))
 
