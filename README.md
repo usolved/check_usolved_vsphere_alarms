@@ -21,7 +21,7 @@ If you have at least Perl 5 and the VMWare Perl SDK  installed this plugin shoul
 
 If you get errors while executing the plugin install the missing modules.
 
-###Install default Perl modules
+### Install default Perl modules
 
 With yum package manager (RedHat, CentOS, ...)
 ```
@@ -36,7 +36,7 @@ cpan install File::Spec
 ```
 
 
-###Install VMWare Perl SDK
+### Install VMWare Perl SDK
 
 This plugin needs the VMWare Perl SDK for connecting to the vSphere or ESX servers. If you are using other plugins like check_vmware_esx.pl or check_esx3.pl you may already have this SDK installed. If you don't have it, please fallow these steps to install it.
 
